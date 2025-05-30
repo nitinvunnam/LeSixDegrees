@@ -26,7 +26,7 @@ interface GameState {
   gameOver: boolean;
   seeResults: boolean;
   noFinish: boolean;
-  lastUpdated: string; // ISO date string to track when to reset
+  lastUpdated: string; //to track when to reset
 }
 
 function App() {
