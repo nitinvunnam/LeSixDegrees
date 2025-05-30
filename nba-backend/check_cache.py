@@ -21,13 +21,13 @@ print(f"Expected players: {len(all_names)}")
 print(f"Cached players:   {len(cached_names)}\n")
 
 if missing:
-    print(f"❗ Missing {len(missing)} players:")
+    print(f" Missing {len(missing)} players:")
     for name in missing:
         print(" -", name)
 else:
-    print("✅ All API players are cached!")
+    print("All API players are cached!")
 
 if extra:
-    print(f"\n⚠️ {len(extra)} extra entries (check for typos):")
+    print(f"\n{len(extra)} extra entries (check for typos):")
     for name in extra:
         print(" -", name)
