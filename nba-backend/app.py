@@ -41,7 +41,7 @@ players_df['TO_YEAR'] = players_df['TO_YEAR'].apply(
 )
 players_df['FROM_YEAR'] = players_df['FROM_YEAR'].astype(int)
 
-# 🎯 This filter applies only to initial challenge players
+#This filter applies only to initial challenge players
 players_df = players_df[
     ((players_df['TO_YEAR'] - players_df['FROM_YEAR']) >= 4) |
     (players_df['FROM_YEAR'] >= 2019)
