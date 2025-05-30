@@ -1,11 +1,11 @@
 import json
 from nba_api.stats.endpoints import commonallplayers
 
-# 1. Load your cache
+# 1. Load cache
 with open("player_seasons.json", "r") as f:
     cached_names = set(json.load(f).keys())
 
-# 2. Fetch the same master list (1976+ filter)
+# 2. Fetch list
 players_df = (
     commonallplayers.CommonAllPlayers(is_only_current_season=0)
     .get_data_frames()[0]
