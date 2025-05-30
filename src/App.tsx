@@ -1,5 +1,14 @@
 import { useEffect, useState, useRef, MouseEvent, ChangeEvent } from "react";
 import { BarChart2, HelpCircle } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 interface StatsSeason {
   TEAM_ID: string;
@@ -12,7 +21,6 @@ type SeasonsByTeam = Record<string, Set<string>>;
 interface GameState {
   initialPlayers: string[];
   playerChain: string[];
-  connectedChain: string[];
   connectionResults: boolean[];
   counter: number;
   gameOver: boolean;
@@ -23,6 +31,7 @@ interface GameState {
 
 function App() {
   const [help, setHelp] = useState<boolean>(false);
+
   const [players, setPlayers] = useState<string[]>([]);
   const [initialPlayers, setInitialPlayers] = useState<string[]>([]);
 
@@ -88,6 +97,83 @@ function App() {
   teams.set("1610612765", "Detroit Pistons");
   teams.set("1610612766", "Charlotte Hornets");
 
+  // Function to save game state to localStorage
+  const saveGameState = () => {
+    const gameState: GameState = {
+      initialPlayers,
+      playerChain,
+      connectionResults,
+      counter,
+      gameOver,
+      seeResults,
+      noFinish,
+      lastUpdated: new Date().toISOString(),
+    };
+    localStorage.setItem("gameState", JSON.stringify(gameState));
+  };
+
+  // Function to load game state from localStorage
+  const loadGameState = () => {
+    const savedState = localStorage.getItem("gameState");
+    if (savedState) {
+      const gameState = JSON.parse(savedState);
+      // Check if the saved state is from today
+      const savedDate = new Date(gameState.lastUpdated);
+      const today = new Date();
+      if (savedDate.toDateString() === today.toDateString()) {
+        setInitialPlayers(gameState.initialPlayers);
+        setPlayerChain(gameState.playerChain);
+        setConnectionResults(gameState.connectionResults);
+        setCounter(gameState.counter);
+        setGameOver(gameState.gameOver);
+        setSeeResults(gameState.seeResults);
+        setNoFinish(gameState.noFinish);
+      } else {
+        // Clear saved state if it's from a different day
+        localStorage.removeItem("gameState");
+      }
+    }
+  };
+
+  // Recalculate connectedChain from initialPlayers[0], playerChain, and connectionResults
+  useEffect(() => {
+    if (initialPlayers.length === 2) {
+      const chain = [initialPlayers[0]];
+      for (let i = 0; i < playerChain.length; i++) {
+        if (connectionResults[i]) {
+          chain.push(playerChain[i]);
+        }
+      }
+      setConnectedChain(chain);
+    }
+  }, [initialPlayers, playerChain, connectionResults]);
+
+  const undoLastWin = () => {
+    const degreeWins = JSON.parse(localStorage.getItem("degreeWins") || "[]");
+    degreeWins.push(connectedChain.length);
+    localStorage.setItem("degreeWins", JSON.stringify(degreeWins));
+  };
+
+  // Load game state on component mount
+  useEffect(() => {
+    loadGameState();
+  }, []);
+
+  // Save game state whenever relevant state changes
+  useEffect(() => {
+    if (initialPlayers.length > 0) {
+      saveGameState();
+    }
+  }, [
+    initialPlayers,
+    playerChain,
+    connectionResults,
+    counter,
+    gameOver,
+    seeResults,
+    noFinish,
+  ]);
+
   // Fetch all available player names
   useEffect(() => {
     const fetchPlayers = async () => {
@@ -102,15 +188,18 @@ function App() {
     fetchPlayers();
   }, []);
 
-  // Fetch the initial two players for the connection challenge
+  // Modify the fetchInitialPlayers function to only fetch if no saved state exists
   useEffect(() => {
     const fetchInitialPlayers = async () => {
-      try {
-        const response = await fetch("http://localhost:5001/initial-players");
-        const data = await response.json();
-        setInitialPlayers(data);
-      } catch (error) {
-        console.error("Error fetching initial players:", error);
+      const savedState = localStorage.getItem("gameState");
+      if (!savedState) {
+        try {
+          const response = await fetch("http://localhost:5001/initial-players");
+          const data = await response.json();
+          setInitialPlayers(data);
+        } catch (error) {
+          console.error("Error fetching initial players:", error);
+        }
       }
     };
     fetchInitialPlayers();
@@ -197,13 +286,6 @@ function App() {
     }
   };
 
-  useEffect(() => {
-    // once we’ve fetched the initial pair, start the chain with the first one
-    if (initialPlayers.length === 2) {
-      setConnectedChain([initialPlayers[0]]);
-    }
-  }, [initialPlayers]);
-
   async function checkConnection(a: string, b: string): Promise<boolean> {
     //fetch player typed and previous player
     const [respA, respB] = await Promise.all([
@@ -270,6 +352,9 @@ function App() {
     }
 
     if (player == initialPlayers[1] && connected) {
+      const degreeWins = JSON.parse(localStorage.getItem("degreeWins") || "[]");
+      degreeWins.push(playerChain.length);
+      localStorage.setItem("degreeWins", JSON.stringify(degreeWins));
       setGameOver(true);
       setGameModal(true);
       setSeeResults(true);
@@ -284,6 +369,59 @@ function App() {
     console.log("playerChain:", playerChain);
     console.log("connectionResults:", connectionResults);
   }, [playerChain, connectionResults]);
+
+  // Helper function to group seasons into stints
+  function groupSeasonsIntoStints(seasons: string[]): string[][] {
+    if (seasons.length === 0) return [];
+    // Sort seasons (assuming format 'YYYY-YY')
+    const sorted = seasons.slice().sort();
+    const stints: string[][] = [];
+    let currentStint: string[] = [sorted[0]];
+
+    function nextSeason(season: string) {
+      // e.g. '2005-06' => 2005
+      const [start] = season.split("-");
+      return (
+        String(Number(start) + 1) +
+        "-" +
+        String(Number(start.slice(2)) + 1).padStart(2, "0")
+      );
+    }
+
+    for (let i = 1; i < sorted.length; i++) {
+      const prev = sorted[i - 1];
+      const curr = sorted[i];
+      if (nextSeason(prev) === curr) {
+        currentStint.push(curr);
+      } else {
+        stints.push(currentStint);
+        currentStint = [curr];
+      }
+    }
+    stints.push(currentStint);
+    return stints;
+  }
+
+  // Helper function to format a stint as multiple lines for the modal
+  function formatStintLines(stint: string[]): string[] {
+    if (stint.length === 1) {
+      return [stint[0]];
+    } else {
+      return [stint[0], `until ${stint[stint.length - 1]}`];
+    }
+  }
+
+  const chartData = Array.from({ length: 8 }, (_, i) => {
+    const degreeWins: number[] = JSON.parse(
+      localStorage.getItem("degreeWins") || "[]"
+    );
+    const degree = i + 1;
+    const count = degreeWins.filter((d: number) => d === degree).length;
+    return {
+      name: degree,
+      count,
+    };
+  });
 
   return (
     <>
@@ -388,7 +526,7 @@ function App() {
                 <div
                   key={i}
                   className={`text-center font-semibold text-lg my-2 p-2 rounded ${
-                    wasConnected ? "bg-gray-600" : "bg-red-500"
+                    wasConnected ? "bg-green-600" : "bg-red-500"
                   }`}
                 >
                   {`${initialPlayers[0]} ➡️ ${player}`}
@@ -412,7 +550,7 @@ function App() {
               <div
                 key={i}
                 className={`text-center font-semibold text-lg my-2 p-2 rounded ${
-                  wasConnected ? "bg-gray-600" : "bg-red-500"
+                  wasConnected ? "bg-green-600" : "bg-red-500"
                 }`}
               >
                 {`${connectionSource} ➡️ ${player}`}
@@ -421,9 +559,16 @@ function App() {
           })}
         </div>
 
+        <button
+          className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-500 transition"
+          onClick={undoLastWin}
+        >
+          Undo Last Win
+        </button>
+
         {/* New: Show one dynamic dropdown at a time, until 8 degrees max */}
         {playerChain.length < 8 && !gameOver && (
-          <div className="relative mx-auto w-1/2 mt-3" ref={dropdownRef}>
+          <div className="relative mx-auto w-1/2 mt-6" ref={dropdownRef}>
             <input
               type="text"
               placeholder={`${
@@ -470,6 +615,16 @@ function App() {
             <p>
               You completed the game in {connectedChain.length - 1} degrees!
             </p>
+            <div className="mx-auto mt-6 w-full max-w-md h-48">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <XAxis dataKey="name" />
+                  <YAxis allowDecimals={false} domain={[0, 1]} />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#C9ADDC" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
             <button
               className="mt-4 px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-400 transition"
               onClick={() => setGameModal(false)}
@@ -503,10 +658,6 @@ function App() {
               {statsModal.name}’s Teams & Seasons
             </h2>
             <div className="max-h-64 overflow-y-auto space-y-2">
-              {/*
-                 ⭐ CHANGED: first reduce into a typed SeasonsByTeam,
-                 then Object.entries sees [string,Set<string>][] automatically
-              */}
               {Object.entries(
                 statsModal.seasons.reduce<SeasonsByTeam>(
                   (acc, { TEAM_ID, SEASON_ID }) => {
@@ -516,19 +667,26 @@ function App() {
                   },
                   {} as SeasonsByTeam
                 )
-              ).map(([team, seasonsSet]) => (
-                <div key={team}>
-                  <p className="font-semibold">{teams.get(team)}:</p>
-                  <ul className="list-disc list-inside ml-4">
-                    {/*
-                       ⭐ CHANGED: TS now knows seasonsSet is Set<string>
-                    */}
-                    {Array.from(seasonsSet).map((s) => (
-                      <li key={s}>{s}</li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+              )
+                // Sort teams by the earliest season (rookie year to retirement)
+                .sort((a, b) => {
+                  const aFirst = Array.from(a[1]).sort()[0];
+                  const bFirst = Array.from(b[1]).sort()[0];
+                  return aFirst.localeCompare(bFirst);
+                })
+                .map(([team, seasonsSet]) => (
+                  <div key={team}>
+                    <p className="font-semibold">{teams.get(team)}:</p>
+                    <ul className="list-disc list-inside ml-4">
+                      {groupSeasonsIntoStints(Array.from(seasonsSet)).map(
+                        (stint, idx) =>
+                          formatStintLines(stint).map((line, i) => (
+                            <li key={idx + "-" + i}>{line}</li>
+                          ))
+                      )}
+                    </ul>
+                  </div>
+                ))}
             </div>
             <button
               className="mt-4 px-4 py-2 bg-gray-800 items-center text-white rounded hover:bg-gray-400"
