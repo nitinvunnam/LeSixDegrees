@@ -8,7 +8,7 @@ from nba_api.stats.library.http import NBAStatsHTTP
 NBAStatsHTTP.timeout = 10
 
 def fetch_player_data():
-    # load existing cache (so we don’t re-fetch everyone)
+    # load existing cache (so i don’t re-fetch everyone)
     try:
         with open("player_seasons.json", "r") as f:
             player_cache = json.load(f)
