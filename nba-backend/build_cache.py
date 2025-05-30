@@ -5,7 +5,6 @@ import requests
 from nba_api.stats.endpoints import playercareerstats, commonallplayers
 from nba_api.stats.library.http import NBAStatsHTTP
 
-# Set request timeout for nba_api (in seconds)
 NBAStatsHTTP.timeout = 10
 
 def fetch_player_data():
@@ -24,7 +23,7 @@ def fetch_player_data():
     for i, (_, row) in enumerate(players.iterrows()):
         name = row['DISPLAY_FIRST_LAST']
         if name in player_cache:
-            continue   # ← skip players you’ve already got
+            continue
         player_id = row['PERSON_ID']
         print(f"[{i}] (missing) Fetching {name}…")
 
@@ -37,10 +36,10 @@ def fetch_player_data():
                 player_cache[name] = simplified
                 break
             except Exception as e:
-                print(f"❌ Attempt {attempt+1} failed for {name}: {e}")
+                print(f" Attempt {attempt+1} failed for {name}: {e}")
                 time.sleep(1)
         else:
-            print(f"🚫 Giving up on {name} after 3 attempts.")
+            print(f" Giving up on {name} after 3 attempts.")
 
     # overwrite the file with both old + newly fetched players
     with open("player_seasons.json", "w") as f:
