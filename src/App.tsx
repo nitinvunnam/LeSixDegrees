@@ -309,7 +309,7 @@ function App() {
           seasonsA[i].TEAM_ID === seasonsB[j].TEAM_ID &&
           seasonsA[i].SEASON_ID === seasonsB[j].SEASON_ID
         ) {
-          console.log("✅ Match found:", {
+          console.log("Match found:", {
             team: seasonsA[i].TEAM_ID,
             season: seasonsA[i].SEASON_ID,
           });
