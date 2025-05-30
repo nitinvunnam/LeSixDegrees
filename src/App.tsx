@@ -517,7 +517,7 @@ function App() {
             </>
           )}
         </h3>
-        {/* New: Visualize the path of selected players */}
+        {/*Visualize the path of selected players */}
         <div className="mt-4 mx-auto w-1/2">
           {playerChain.map((player, i) => {
             const wasConnected = connectionResults[i];
@@ -566,7 +566,7 @@ function App() {
           Undo Last Win
         </button>
 
-        {/* New: Show one dynamic dropdown at a time, until 8 degrees max */}
+        {/*Show one dynamic dropdown at a time, until 8 degrees max */}
         {playerChain.length < 8 && !gameOver && (
           <div className="relative mx-auto w-1/2 mt-6" ref={dropdownRef}>
             <input
