@@ -150,7 +150,7 @@ function App() {
 
   const undoLastWin = () => {
     const degreeWins = JSON.parse(localStorage.getItem("degreeWins") || "[]");
-    degreeWins.push(connectedChain.length);
+    degreeWins.push(connectedChain.length - 1);
     localStorage.setItem("degreeWins", JSON.stringify(degreeWins));
   };
 
@@ -353,13 +353,16 @@ function App() {
 
     if (player == initialPlayers[1] && connected) {
       const degreeWins = JSON.parse(localStorage.getItem("degreeWins") || "[]");
-      degreeWins.push(playerChain.length);
+      degreeWins.push(connectedChain.length);
       localStorage.setItem("degreeWins", JSON.stringify(degreeWins));
       setGameOver(true);
       setGameModal(true);
       setSeeResults(true);
     }
-    if (newChain.length == 8 && player != initialPlayers[1]) {
+    if (
+      newChain.length == 8 &&
+      (player != initialPlayers[1] || connected == false)
+    ) {
       setNoFinish(true);
       setSeeResults(true);
     }
@@ -416,12 +419,14 @@ function App() {
       localStorage.getItem("degreeWins") || "[]"
     );
     const degree = i + 1;
-    const count = degreeWins.filter((d: number) => d === degree).length;
+    const Count = degreeWins.filter((d: number) => d === degree).length;
     return {
       name: degree,
-      count,
+      Count,
     };
   });
+
+  const maxY = Math.max(...chartData.map((d) => d.Count), 1);
 
   return (
     <>
@@ -429,7 +434,7 @@ function App() {
       <div className="flex items-center justify-between px-4 mt-3">
         <div className="flex items-center space-x-4">
           <h1 className="text-5xl font-bold font-sans">🏀 LeSixDegrees</h1>
-          <div className="h-12 w-[4px] bg-white"></div>
+          <div className="h-12 w-[4px] bg-black"></div>
           <h1 className="text-3xl font-bold font-sans text-center transition-transform duration-200 hover:scale-105">
             Daily Basketball Trivia
           </h1>
@@ -438,7 +443,7 @@ function App() {
           {seeResults && (
             <button
               className={`text-2xl p-3 rounded-md transition-transform duration-200 hover:opacity-50 
-                text-white`}
+                text-black`}
               onClick={() =>
                 gameOver ? setGameModal(true) : setNoFinish(true)
               }
@@ -449,7 +454,7 @@ function App() {
 
           <button
             className={`text-2xl p-3 rounded-md transition-transform duration-200 hover:opacity-50 
-          text-white`}
+          text-black`}
             onClick={() => setHelp(!help)}
           >
             <HelpCircle className="w-10 h-10" />
@@ -460,9 +465,9 @@ function App() {
       {/* Help Box */}
       {help && (
         <div className="flex items-start justify-center">
-          <div className="bg-gray-700 w-1/2 rounded-lg mt-5 p-5">
+          <div className="bg-white w-1/2 rounded-lg mt-5 p-5">
             <h1 className="text-2xl font-bold text-center py-4">How to Play</h1>
-            <div className="mx-auto h-1 rounded-md w-19/20 mb-2.5 bg-white"></div>
+            <div className="mx-auto h-1 rounded-md w-19/20 mb-2.5 bg-black"></div>
             <p className="ml-3">
               The goal is to connect both players through common teammates.{" "}
               <br />
@@ -496,20 +501,20 @@ function App() {
       )}
 
       {/* Main gameplay container */}
-      <div className="p-4 mt-10 shadow-lg rounded">
+      <div className="p-4 mt-10 rounded">
         <h3 className="text-2xl font-bold text-center">
           {initialPlayers.length === 2 && (
             <>
               Connect{" "}
               <span
-                className="cursor-pointer hover:text-blue-300"
+                className="cursor-pointer hover:text-blue-400"
                 onClick={() => showStats(initialPlayers[0])}
               >
                 {initialPlayers[0]}
               </span>{" "}
               ➡️{" "}
               <span
-                className="cursor-pointer hover:text-blue-300"
+                className="cursor-pointer hover:text-blue-400"
                 onClick={() => showStats(initialPlayers[1])}
               >
                 {initialPlayers[1]}
@@ -525,8 +530,10 @@ function App() {
               return (
                 <div
                   key={i}
-                  className={`text-center font-semibold text-lg my-2 p-2 rounded ${
-                    wasConnected ? "bg-green-600" : "bg-red-500"
+                  className={`text-center font-semibold text-lg my-2 p-2 rounded-xl shadow-md bg-[#f7f7ee] ${
+                    wasConnected
+                      ? "ring-2 ring-green-500"
+                      : "ring-2 ring-red-500"
                   }`}
                 >
                   {`${initialPlayers[0]} ➡️ ${player}`}
@@ -549,8 +556,8 @@ function App() {
             return (
               <div
                 key={i}
-                className={`text-center font-semibold text-lg my-2 p-2 rounded ${
-                  wasConnected ? "bg-green-600" : "bg-red-500"
+                className={`text-center font-semibold text-lg my-2 p-2 rounded-xl shadow-md bg-[#f7f7ee] ${
+                  wasConnected ? "ring-2 ring-green-500" : "ring-2 ring-red-500"
                 }`}
               >
                 {`${connectionSource} ➡️ ${player}`}
@@ -558,13 +565,13 @@ function App() {
             );
           })}
         </div>
-
+        {/* 
         <button
           className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-500 transition"
           onClick={undoLastWin}
         >
           Undo Last Win
-        </button>
+        </button> */}
 
         {/*Show one dynamic dropdown at a time, until 8 degrees max */}
         {playerChain.length < 8 && !gameOver && (
@@ -619,9 +626,9 @@ function App() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
                   <XAxis dataKey="name" />
-                  <YAxis allowDecimals={false} domain={[0, 1]} />
+                  <YAxis allowDecimals={false} domain={[0, maxY]} />
                   <Tooltip />
-                  <Bar dataKey="count" fill="#C9ADDC" />
+                  <Bar dataKey="" fill="#F5EEDD" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -638,11 +645,21 @@ function App() {
       {/* Game Over Modal */}
       {noFinish && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-          <div className="bg-slate-300 p-6 rounded-lg shadow-lg text-black text-center w-4/5 sm:w-1/2 lg:w-1/3">
+          <div className="bg-white p-6 rounded-lg shadow-lg text-black text-center w-4/5 sm:w-1/2 lg:w-1/3">
             <h2 className="text-2xl font-bold mb-4">😔 Game over</h2>
             <p>You ran out of connections, but try again tomorrow!</p>
+            <div className="mx-auto mt-6 w-full max-w-md h-48">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <XAxis dataKey="name" />
+                  <YAxis allowDecimals={false} domain={[0, maxY]} />
+                  <Tooltip />
+                  <Bar dataKey="Count" fill="#C9ADDC" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
             <button
-              className="mt-4 px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-400 transition"
+              className="mt-4 px-4 py-2 bg-blue-300 text-black rounded hover:bg-blue-200 transition"
               onClick={() => setNoFinish(false)}
             >
               Close
@@ -653,7 +670,7 @@ function App() {
 
       {statsModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-          <div className="bg-gray-600 p-6 rounded-lg shadow-lg w-4/5 max-w-md">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-4/5 max-w-md">
             <h2 className="text-xl font-bold mb-4">
               {statsModal.name}’s Teams & Seasons
             </h2>
@@ -689,7 +706,7 @@ function App() {
                 ))}
             </div>
             <button
-              className="mt-4 px-4 py-2 bg-gray-800 items-center text-white rounded hover:bg-gray-400"
+              className="mt-4 px-4 py-2 bg-blue-300 items-center text-black rounded hover:bg-blue-200"
               onClick={() => setStatsModal(null)}
             >
               Close
