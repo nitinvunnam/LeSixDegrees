@@ -9,6 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { Link } from "react-router-dom";
 
 interface StatsSeason {
   TEAM_ID: string;
@@ -461,7 +462,6 @@ function App() {
           </button>
         </div>
       </div>
-
       {/* Help Box */}
       {help && (
         <div className="flex items-start justify-center">
@@ -499,7 +499,6 @@ function App() {
           </button>
         </div>
       )}
-
       {/* Main gameplay container */}
       <div className="p-4 mt-10 rounded">
         <h3 className="text-2xl font-bold text-center">
@@ -617,7 +616,7 @@ function App() {
       {/* Game Over Modal */}
       {gameModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-          <div className="bg-slate-300 p-6 rounded-lg shadow-lg text-black text-center w-4/5 sm:w-1/2 lg:w-1/3">
+          <div className="bg-white p-6 rounded-lg shadow-lg text-black text-center w-4/5 sm:w-1/2 lg:w-1/3">
             <h2 className="text-2xl font-bold mb-4">🎉 You Won!</h2>
             <p>
               You completed the game in {connectedChain.length - 1} degrees!
@@ -626,14 +625,25 @@ function App() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
                   <XAxis dataKey="name" />
-                  <YAxis allowDecimals={false} domain={[0, maxY]} />
-                  <Tooltip />
-                  <Bar dataKey="" fill="#F5EEDD" />
+                  <YAxis
+                    tick={false}
+                    allowDecimals={false}
+                    domain={[0, Math.ceil(maxY * 1.2)]}
+                  />
+                  <Bar
+                    dataKey="Count"
+                    fill="#E6DBC7"
+                    label={{
+                      position: "top",
+                      fill: "black",
+                      fontWeight: "bold",
+                    }}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
             <button
-              className="mt-4 px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-400 transition"
+              className="mt-4 px-4 py-2 bg-blue-300 text-black rounded hover:bg-blue-200 transition"
               onClick={() => setGameModal(false)}
             >
               Close
@@ -641,7 +651,6 @@ function App() {
           </div>
         </div>
       )}
-
       {/* Game Over Modal */}
       {noFinish && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
@@ -652,9 +661,20 @@ function App() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
                   <XAxis dataKey="name" />
-                  <YAxis allowDecimals={false} domain={[0, maxY]} />
-                  <Tooltip />
-                  <Bar dataKey="Count" fill="#C9ADDC" />
+                  <YAxis
+                    tick={false}
+                    allowDecimals={false}
+                    domain={[0, Math.ceil(maxY * 1.2)]}
+                  />
+                  <Bar
+                    dataKey="Count"
+                    fill="#E6DBC7"
+                    label={{
+                      position: "top",
+                      fill: "black",
+                      fontWeight: "bold",
+                    }}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -667,7 +687,6 @@ function App() {
           </div>
         </div>
       )}
-
       {statsModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-4/5 max-w-md">
@@ -714,6 +733,9 @@ function App() {
           </div>
         </div>
       )}
+      <footer className="fixed bottom-0 w-full text-center p-4">
+        <a href="/privacy_policy.html">Privacy Policy</a>{" "}
+      </footer>
     </>
   );
 }
