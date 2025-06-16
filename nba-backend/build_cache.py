@@ -20,8 +20,21 @@ def fetch_player_data():
         .get_data_frames()[0]
     players = players[players['FROM_YEAR'].astype(int) >= 1976]
 
+    valid_initial_players = []
+
     for i, (_, row) in enumerate(players.iterrows()):
         name = row['DISPLAY_FIRST_LAST']
+        from_year = int(row['FROM_YEAR'])
+        if row['TO_YEAR'] == 'Active':
+            to_year = current_year
+        else:
+            to_year = int(row['TO_YEAR'])
+
+        career_length = to_year - from_year + 1
+
+        if career_length >= 4 or from_year >= 2019:
+            valid_initial_players.append(name)
+
         if name in player_cache:
             continue
         player_id = row['PERSON_ID']
@@ -40,6 +53,10 @@ def fetch_player_data():
                 time.sleep(1)
         else:
             print(f" Giving up on {name} after 3 attempts.")
+
+    
+    with open("valid_initial_players.json", "w") as f:
+        json.dump(valid_initial_players, f, indent=2)
 
     # overwrite the file with both old + newly fetched players
     with open("player_seasons.json", "w") as f:

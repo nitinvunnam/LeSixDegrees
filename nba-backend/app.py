@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify
 import pandas as pd
 from flask_cors import CORS
-from nba_api.stats.endpoints import commonallplayers, commonplayerinfo
 import datetime
 from datetime import date
 import random
@@ -29,26 +28,11 @@ with open("player_seasons.json", "r") as f:
 
 current_year = datetime.datetime.now().year
 
-# Get all players (to apply initial player filtering only)
-allPlayers = commonallplayers.CommonAllPlayers(is_only_current_season=0)
-all_new = commonplayerinfo.CommonPlayerInfo
-players_df = allPlayers.get_data_frames()[0]
+# Filter initial pool using cached season data
+def get_filtered_player_names():
+    with open("valid_initial_players.json", "r") as f:
+        return json.load(f)
 
-# Post-merger filter (standard for both uses)
-players_df = players_df[players_df['FROM_YEAR'].astype(int) >= 1976]
-players_df['TO_YEAR'] = players_df['TO_YEAR'].apply(
-    lambda x: current_year if x == 'Active' else int(x)
-)
-players_df['FROM_YEAR'] = players_df['FROM_YEAR'].astype(int)
-
-#This filter applies only to initial challenge players
-players_df = players_df[
-    ((players_df['TO_YEAR'] - players_df['FROM_YEAR']) >= 4) |
-    (players_df['FROM_YEAR'] >= 2019)
-]
-
-# Used for selecting initial challenge players
-players_names = players_df['DISPLAY_FIRST_LAST']
 
 @app.route("/players", methods=["GET"])
 def get_players(): 
@@ -59,7 +43,7 @@ def initial_players():
     today = date.today().isoformat()
     data = load_daily_players()
     if data["date"] != today:
-        random_players = random.sample(players_names.tolist(), 2)
+        random_players = random.sample(get_filtered_player_names, 2)
         save_daily_players(today, random_players)
         return jsonify(random_players)  # Filtered pool
     else:
