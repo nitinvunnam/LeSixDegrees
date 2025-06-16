@@ -31,6 +31,8 @@ interface GameState {
 }
 
 function App() {
+  const BASE_URL = "https://lesixdegrees.onrender.com";
+
   const [help, setHelp] = useState<boolean>(false);
 
   const [players, setPlayers] = useState<string[]>([]);
@@ -179,7 +181,7 @@ function App() {
   useEffect(() => {
     const fetchPlayers = async () => {
       try {
-        const response = await fetch("http://localhost:5001/players");
+        const response = await fetch(`${BASE_URL}/players`);
         const data = await response.json();
         setPlayers(data);
       } catch (error) {
@@ -195,7 +197,7 @@ function App() {
       const savedState = localStorage.getItem("gameState");
       if (!savedState) {
         try {
-          const response = await fetch("http://localhost:5001/initial-players");
+          const response = await fetch(`${BASE_URL}/initial-players`);
           const data = await response.json();
           setInitialPlayers(data);
         } catch (error) {
@@ -275,9 +277,7 @@ function App() {
   const showStats = async (player: string) => {
     try {
       const resp = await fetch(
-        `http://localhost:5001/player-stats?player=${encodeURIComponent(
-          player
-        )}`
+        `${BASE_URL}/player-stats?player=${encodeURIComponent(player)}`
       );
       if (!resp.ok) throw new Error("Player not found");
       const seasons: StatsSeason[] = await resp.json();
@@ -290,12 +290,8 @@ function App() {
   async function checkConnection(a: string, b: string): Promise<boolean> {
     //fetch player typed and previous player
     const [respA, respB] = await Promise.all([
-      fetch(
-        `http://localhost:5001/player-stats?player=${encodeURIComponent(a)}`
-      ),
-      fetch(
-        `http://localhost:5001/player-stats?player=${encodeURIComponent(b)}`
-      ),
+      fetch(`${BASE_URL}/player-stats?player=${encodeURIComponent(a)}`),
+      fetch(`${BASE_URL}/player-stats?player=${encodeURIComponent(b)}`),
     ]);
 
     // makes fetched data usable JS stuff
