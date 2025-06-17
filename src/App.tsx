@@ -1,15 +1,6 @@
 import { useEffect, useState, useRef, MouseEvent, ChangeEvent } from "react";
 import { BarChart2, HelpCircle } from "lucide-react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import { Link } from "react-router-dom";
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts";
 
 interface StatsSeason {
   TEAM_ID: string;
@@ -55,8 +46,6 @@ function App() {
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const [seeResults, setSeeResults] = useState<boolean>(false);
-
-  const [playedTogether, setPlayedTogether] = useState<boolean>(false);
 
   const [counter, setCounter] = useState(0);
 
@@ -150,12 +139,6 @@ function App() {
       setConnectedChain(chain);
     }
   }, [initialPlayers, playerChain, connectionResults]);
-
-  const undoLastWin = () => {
-    const degreeWins = JSON.parse(localStorage.getItem("degreeWins") || "[]");
-    degreeWins.push(connectedChain.length - 1);
-    localStorage.setItem("degreeWins", JSON.stringify(degreeWins));
-  };
 
   // Load game state on component mount
   useEffect(() => {
@@ -340,7 +323,6 @@ function App() {
 
     const newChain = [...playerChain, player];
     setPlayerChain(newChain);
-    setPlayedTogether(connected);
     setConnectionResults((prev) => [...prev, connected]);
 
     if (connected) {
