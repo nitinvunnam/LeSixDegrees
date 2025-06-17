@@ -104,29 +104,6 @@ function App() {
     localStorage.setItem("gameState", JSON.stringify(gameState));
   };
 
-  // Function to load game state from localStorage
-  const loadGameState = () => {
-    const savedState = localStorage.getItem("gameState");
-    if (savedState) {
-      const gameState = JSON.parse(savedState);
-      // Check if the saved state is from today
-      const savedDate = new Date(gameState.lastUpdated);
-      const today = new Date();
-      if (savedDate.toDateString() === today.toDateString()) {
-        setInitialPlayers(gameState.initialPlayers);
-        setPlayerChain(gameState.playerChain);
-        setConnectionResults(gameState.connectionResults);
-        setCounter(gameState.counter);
-        setGameOver(gameState.gameOver);
-        setSeeResults(gameState.seeResults);
-        setNoFinish(gameState.noFinish);
-      } else {
-        // Clear saved state if it's from a different day
-        localStorage.removeItem("gameState");
-      }
-    }
-  };
-
   // Recalculate connectedChain from initialPlayers[0], playerChain, and connectionResults
   useEffect(() => {
     if (initialPlayers.length === 2) {
@@ -139,11 +116,6 @@ function App() {
       setConnectedChain(chain);
     }
   }, [initialPlayers, playerChain, connectionResults]);
-
-  // Load game state on component mount
-  useEffect(() => {
-    loadGameState();
-  }, []);
 
   // Save game state whenever relevant state changes
   useEffect(() => {
@@ -174,23 +146,41 @@ function App() {
     fetchPlayers();
   }, []);
 
-  // Modify the fetchInitialPlayers function to only fetch if no saved state exists
   useEffect(() => {
-    const fetchInitialPlayers = async () => {
+    const initializeGame = async () => {
       const savedState = localStorage.getItem("gameState");
-      if (!savedState) {
-        try {
-          const response = await fetch(`${BASE_URL}/initial-players`);
-          const data = await response.json();
-          setInitialPlayers(data);
-        } catch (error) {
-          console.error("Error fetching initial players:", error);
+      const today = new Date().toDateString();
+
+      if (savedState) {
+        const gameState = JSON.parse(savedState);
+        const savedDate = new Date(gameState.lastUpdated).toDateString();
+
+        if (savedDate === today) {
+          setInitialPlayers(gameState.initialPlayers);
+          setPlayerChain(gameState.playerChain);
+          setConnectionResults(gameState.connectionResults);
+          setCounter(gameState.counter);
+          setGameOver(gameState.gameOver);
+          setSeeResults(gameState.seeResults);
+          setNoFinish(gameState.noFinish);
+          return;
+        } else {
+          localStorage.removeItem("gameState");
         }
       }
-    };
-    fetchInitialPlayers();
-  }, []);
 
+      // Fetch from backend if no valid saved state
+      try {
+        const response = await fetch(`${BASE_URL}/initial-players`);
+        const data = await response.json();
+        setInitialPlayers(data);
+      } catch (error) {
+        console.error("Error fetching initial players:", error);
+      }
+    };
+
+    initializeGame();
+  }, []);
   // Dropdown keyboard support and outside click logic
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | any) => {
