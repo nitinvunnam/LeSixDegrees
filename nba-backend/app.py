@@ -10,17 +10,10 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-IP_FILE = "daily_initial_players.json"
-
-def load_daily_players():
-    if os.path.exists(IP_FILE):
-        with open(IP_FILE, "r") as f:
-            return json.load(f)
-    return {"date": "", "players": []}
-
-def save_daily_players(date_str, players):
-    with open(IP_FILE, "w") as f:
-        json.dump({"date": date_str, "players": players}, f)
+daily_data = {
+    "date": "",
+    "players": []
+}
 
 # Load cached player season data
 with open("player_seasons.json", "r") as f:
@@ -40,13 +33,10 @@ def get_players():
 @app.route("/initial-players", methods=["GET"])
 def initial_players():
     today = date.today().isoformat()
-    data = load_daily_players()
-    if data["date"] != today:
-        random_players = random.sample(get_filtered_player_names(), 2)
-        save_daily_players(today, random_players)
-        return jsonify(random_players)  # Filtered pool
-    else:
-        return jsonify(data["players"])
+    if daily_data["date"] != today:
+        daily_data["date"] = today
+        daily_data["players"] = random.sample(get_filtered_player_names(), 2)
+    return jsonify(daily_data["players"])
 
 @app.route("/player-stats", methods=["GET"])
 def player_stats():
